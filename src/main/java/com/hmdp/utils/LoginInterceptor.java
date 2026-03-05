@@ -27,35 +27,39 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-
-        //获取session中的用户
-//        HttpSession session = request.getSession();
 //
-//        Object user = session.getAttribute("user");
-        String token = request.getHeader("Authorization");
-        if (StrUtil.isBlank( token)){
+//        //获取session中的用户
+////        HttpSession session = request.getSession();
+////
+////        Object user = session.getAttribute("user");
+//        String token = request.getHeader("Authorization");
+//        if (StrUtil.isBlank( token)){
+//            response.setStatus(401);
+//            return false;
+//        }
+//        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries("login:token:" + token);
+//        if (userMap.isEmpty()){
+//            response.setStatus(401);
+//            return false;
+//        }
+//        UserDTO userDTO = BeanUtil.fillBeanWithMap(userMap, new UserDTO(), false);
+//
+//
+//        //存在,保存在threadlocal
+//        UserHolder.saveUser((userDTO));
+//        //保存在redis
+//
+//        //放行
+//        stringRedisTemplate.expire("login:token:" + token, 30, TimeUnit.MINUTES);
+
+        //判断是否需要拦截(threadlocal有用户)
+        if (UserHolder.getUser() == null){
             response.setStatus(401);
             return false;
         }
-        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries("login:token:" + token);
-        if (userMap.isEmpty()){
-            response.setStatus(401);
-            return false;
-        }
-        UserDTO userDTO = BeanUtil.fillBeanWithMap(userMap, new UserDTO(), false);
 
-
-        //存在,保存在threadlocal
-        UserHolder.saveUser((userDTO));
-        //保存在redis
-
-        //放行
-        stringRedisTemplate.expire("login:token:" + token, 30, TimeUnit.MINUTES);
         return true;
     }
 
-    @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        UserHolder.removeUser();
-    }
+
 }
