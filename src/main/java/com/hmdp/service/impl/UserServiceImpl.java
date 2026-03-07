@@ -18,12 +18,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
 
 /**
  * <p>
@@ -41,6 +44,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     private UserMapper userMapper;
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    private String utoken = "";
 
     /**
      * 发送验证码
@@ -92,6 +96,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
 
         String token = UUID.randomUUID().toString();
+        utoken = token;
 
         UserDTO userDTO = new UserDTO();
         BeanUtils.copyProperties(user,userDTO);
@@ -103,6 +108,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         stringRedisTemplate.opsForHash().putAll("login:token:"+token,map);
         stringRedisTemplate.expire("login:token:"+token,30,TimeUnit.MINUTES);
         return Result.ok(token);
+    }
+
+    @Transactional
+    @Override
+    public Result logout() {
+        Boolean result = stringRedisTemplate.delete(LOGIN_USER_KEY + utoken);
+        if(result){
+            return Result.ok();
+        }
+        //System.out.println("key = " + LOGIN_USER_KEY + utoken);
+        return Result.fail(LOGIN_USER_KEY + utoken);
     }
 
     private User creatUserWithPhone(String phone) {
